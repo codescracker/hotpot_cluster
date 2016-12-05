@@ -633,12 +633,14 @@
                             .style("top", (d3.mouse(this)[1] +20) + "px");
 
                     notify_r("hide_other_groups", "rdot"+d.uid);
+                    notify_r("hide_other_dots","rdot"+d.uid);
                 })
                 .on("mouseout", function (d) {
                     tooltip_recommendation.transition()
                             .duration(500)
                             .style("opacity", 0);
                     notify_r("show_other_groups", "rdot"+d.uid);
+                    notify_r("show_other_dots","rdot"+d.uid);
                 });
 
 
@@ -722,10 +724,12 @@
                     return "rbar"+d.uid;
                 })
                 .on("mouseover",function (d) {
-                    notify_r("hide_other_dots","rbar"+d.uid)
+                    notify_r("hide_other_dots","rbar"+d.uid);
+                    notify_r("hide_other_groups","rbar"+d.uid);
                 })
                 .on("mouseout",function (d) {
-                    notify_r("show_other_dots","rbar"+d.uid)
+                    notify_r("show_other_dots","rbar"+d.uid);
+                    notify_r("show_other_groups","rbar"+d.uid);
                 })
                 .attr("transform", function (d) {
                     return "translate(" + x0(d.Rank) + ",0)";
