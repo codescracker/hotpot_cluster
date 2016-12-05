@@ -27,9 +27,10 @@
 
         .map_tooltip {
             position: absolute;
-            width: 200px;
-            height: 28px;
+            width: 300px;
+            height: 115px;
             pointer-events: none;
+            background-color: rgba(255,255,255,0.7) ;
         }
 
         #hotpot_map {
@@ -37,6 +38,12 @@
             background-size: 600px 600px;
             background-repeat: no-repeat;
             /*background-position: 16px 0px;*/
+        }
+
+        #recommendation_map {
+            background-image: url('beijing.png');
+            background-size: 600px 600px;
+            background-repeat: no-repeat;
         }
 
         #hotpotheader {
@@ -56,18 +63,30 @@
         <p id="hotpotexplain" class="text-right">--Data Analysis, Visualization, Recommendation</p>
 
         <div class="row well well-lg">
-            <div class="col-md-6" style=" height:600px;overflow: scroll";>
-                <div id="compare_list"></div>
-                <div id="dispatch_bar"></div>
-                <div id="estate_price"></div>
-            </div>
-            <div class="col-md-6">
-                <div id="hotpot_map"></div>
+            <div class="row">
+                <h1 class="text-center">Result of Clustering(click the dots in the map, then compare two restaurant)</h1>
+                <div class="col-md-6" style=" height:600px;overflow: scroll" ;>
+                    <div id="compare_list"></div>
+                    <div id="dispatch_bar"></div>
+                    <div id="estate_price"></div>
+                </div>
+                <div class="col-md-6">
+                    <div id="hotpot_map"></div>
+                </div>
             </div>
 
+            <div class="row">
+                <h1 class="text-center">Example of Clustering(put the mouse on any dot or grouped bar chart)</h1>
+                <div class="col-md-6" style=" height:600px;overflow: scroll" ;>
+                    <div id="recommendation_utilities"></div>
+                </div>
+                <div class="col-md-6">
+                    <div id="recommendation_map"></div>
+                </div>
+            </div>
         </div>
-    </div>
 
+    </div>
 
 
 </div>
@@ -105,9 +124,16 @@
         x.domain(d3.extent(data, function (d) {
             return d.lat;
         }));
+        console.log("x_domain: "+d3.extent(data, function (d) {
+                    return d.lat;
+                }) );
+
         y.domain(d3.extent(data, function (d) {
             return d.lng;
         }));
+        console.log("y_domain: "+d3.extent(data, function (d) {
+                    return d.lng;
+                }) )
 
         var reverseX = d3.scale.linear()
                 .range(d3.extent(data, function (d) {
@@ -145,8 +171,8 @@
                             .duration(200)
                             .style("opacity", .9);
                     tooltip.html("Overall Rating: " + d.overall_rating + "<br/> " + "Price: " + d.price)
-                            .style("left", (d3.event.pageX + 5) + "px")
-                            .style("top", (d3.event.pageY - 28) + "px");
+                            .style("left", (d3.mouse(this)[0] + 40) + "px")
+                            .style("top", (d3.mouse(this)[1] +20) + "px");
                 })
                 .on("mouseout", function (d) {
                     tooltip.transition()
@@ -268,7 +294,7 @@
                     .attr("x", function (d) {
                         return x(d.uid);
                     })
-                    .attr("width", x.rangeBand()/2)
+                    .attr("width", x.rangeBand() / 2)
                     .attr("y", function (d) {
                         return y(+d.estate_average_price);
                     })
@@ -312,7 +338,7 @@
                     .attr("x", function (d) {
                         return x(d.uid);
                     })
-                    .attr("width", x.rangeBand()/2)
+                    .attr("width", x.rangeBand() / 2)
                     .attr("y", function (d) {
                         return y(+d.estate_average_price);
                     })
@@ -543,6 +569,243 @@
 
     });
 
+    d3.csv("hotpot_recommendation.csv", function (error, data) {
+        if (error) throw error;
+
+        console.log(data);
+        var margin = {top: 20, right: 20, bottom: 20, left: 20},
+                width = 600 - margin.left - margin.right,
+                height = 600 - margin.top - margin.bottom;
+
+        var x = d3.scale.linear()
+                .range([0, width]);
+
+        var y = d3.scale.linear()
+                .range([height, 0]);
+
+        var svg = d3.select("#recommendation_map").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("id","rdots")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var tooltip_recommendation = d3.select("#recommendation_map").append("div")
+                .attr("class", "map_tooltip")
+                .attr("id", "recommendation_tip")
+                .style("opacity", 0);
+
+        data.forEach(function (d) {
+            d.lat = +d["location/lat"];
+            d.lng = +d["location/lng"];
+        });
+
+        x.domain([39.827328,39.988664]);
+        y.domain([116.286213,116.501089]);
+
+
+        svg.selectAll(".dot")
+                .data(data)
+                .enter().append("circle")
+                .attr("class", "dot")
+                .attr("r", 8.0)
+                .attr("id", function (d) {
+                    return "rdot"+d.uid
+                })
+                .attr("cx", function (d) {
+                    return x(d.lat);
+                })
+                .attr("cy", function (d) {
+                    return y(d.lng);
+                })
+                .style("fill", "red")
+                .on("mouseover", function (d) {
+                    tooltip_recommendation.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                    tooltip_recommendation.html("Restaurant ID: " + d.uid + "<br/> " + "Rank: " + d.Rank +
+//                            "<br/>" + "Address: " + d.adress + "<br/>" + "Around Restaurant Number: " + d.around_restaurant_No +
+                            "<br/>" + "Around Restaurant Average Price: " + d.around_restaurant_average_price +
+                            "<br/>" + "Real Estate Number: " + d.real_estate_No +
+                            "<br/>" + "Estate Average Price: " + d.estate_average_price
+                    )
+                            .style("left", (d3.mouse(this)[0] + 40) + "px")
+                            .style("top", (d3.mouse(this)[1] +20) + "px");
+
+                    notify_r("hide_other_groups", "rdot"+d.uid);
+                })
+                .on("mouseout", function (d) {
+                    tooltip_recommendation.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    notify_r("show_other_groups", "rdot"+d.uid);
+                });
+
+
+        var y_bar = d3.scale.linear()
+                .range([height, 0]);
+
+        var color_bar = d3.scale.ordinal()
+                .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+        var x0 = d3.scale.ordinal()
+                .rangeRoundBands([0, width], .1);
+
+        var x1 = d3.scale.ordinal();
+
+
+        var xAxis = d3.svg.axis()
+                .scale(x0)
+                .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+                .scale(y_bar)
+                .orient("left")
+                .tickFormat(d3.format(".2s"));
+
+        var dataset = data;
+
+        var options = d3.keys(dataset[0]).filter(function (key) {
+            return key !== "lat" && key != "lng" &&
+                    key != "uid" && key != "price" && key != "group" && key != "overall_rating" &&
+                    key != "estate_average_price" && key != "real_estate_No" && key != "around_restaurant_average_price"
+                    && key != "around_restaurant_No" && key != "valores" && key != "adress" && key != "location/lat"
+                    && key != "location/lng" && key != "clusteid" && key != "Rank";
+        });
+
+        dataset.forEach(function (d) {
+            d.valores = options.map(function (name) {
+                return {name: name, value: +d[name]};
+            });
+        });
+
+
+        x0.domain(dataset.map(function (d) {
+            return d.Rank;
+        }));
+        x1.domain(options).rangeRoundBands([0, x0.rangeBand()]);
+        y_bar.domain([0, d3.max(dataset, function (d) {
+            return d3.max(d.valores, function (d) {
+                return d.value;
+            });
+        })]);
+
+        var svg_bar = d3.select("#recommendation_utilities").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .attr("id", "recommendation_bar")
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        svg_bar.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(xAxis);
+
+        svg_bar.append("g")
+                .attr("class", "y axis")
+                .call(yAxis)
+                .append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 6)
+                .attr("dy", ".71em")
+                .style("text-anchor", "end")
+                .text("Utility No.");
+
+        var bar = svg_bar.append("g")
+                .attr("id" , "rgroup")
+                .selectAll(".bar")
+                .data(dataset)
+                .enter().append("g")
+                .attr("class", "bar")
+                .attr("id", function (d) {
+                    return "rbar"+d.uid;
+                })
+                .on("mouseover",function (d) {
+                    notify_r("hide_other_dots","rbar"+d.uid)
+                })
+                .on("mouseout",function (d) {
+                    notify_r("show_other_dots","rbar"+d.uid)
+                })
+                .attr("transform", function (d) {
+                    return "translate(" + x0(d.Rank) + ",0)";
+                });
+
+        bar.selectAll("rect")
+                .data(function (d) {
+                    return d.valores;
+                })
+                .enter().append("rect")
+                .attr("width", x1.rangeBand())
+                .attr("x", function (d) {
+                    return x1(d.name);
+                })
+                .attr("y", function (d) {
+                    return y_bar(d.value);
+                })
+                .attr("height", function (d) {
+                    return height - y_bar(d.value);
+                })
+                .style("fill", function (d) {
+                    return color_bar(d.name);
+                });
+
+        var legend_bar = svg_bar.selectAll(".legend_bar_recommendation")
+                .data(options.slice().reverse())
+                .enter().append("g")
+                .attr("class", "legend_bar_recommendation")
+                .attr("transform", function (d, i) {
+                    return "translate(0," + i * 20 + ")";
+                });
+
+        legend_bar.append("rect")
+                .attr("x", width - 18)
+                .attr("width", 18)
+                .attr("height", 18)
+                .style("fill", color_bar);
+
+        legend_bar.append("text")
+                .attr("x", width - 24)
+                .attr("y", 9)
+                .attr("dy", ".35em")
+                .style("text-anchor", "end")
+                .text(function (d) {
+                    return d;
+                });
+
+        function notify_r(event_name,target) {
+            if(event_name === "hide_other_groups"){
+                var base = target.substring(4);
+                var target_select = "#rbar"+base;
+                d3.select("#rgroup").selectAll("*:not"+"("+target_select+")")
+                        .attr('opacity' , 0.3);
+
+                d3.select(target_select).selectAll("rect").attr("opacity" , 1.0);
+            }
+
+            if(event_name === "show_other_groups"){
+                var base = target.substring(4);
+                var target_select = "#rbar"+base;
+                d3.select("#rgroup").selectAll("*:not"+"("+target_select+")")
+                        .attr('opacity' , 1.0);
+                d3.select("#rgroup").selectAll("rect").attr('opacity' , 1.0);
+            }
+
+            if(event_name === "hide_other_dots"){
+                var base = target.substring(4);
+                var target_select = "#rdot"+base;
+                d3.select("#rdots").selectAll("*:not"+"("+target_select+")")
+                        .attr("opacity", 0.3);
+            }
+
+            if(event_name === "show_other_dots"){
+                var base = target.substring(4);
+                var target_select = "#rdot"+base;
+                d3.select("#rdots").selectAll("*:not"+"("+target_select+")")
+                        .attr("opacity", 1.0);
+            }
+        }
+    })
 </script>
 </body>
 </html>
