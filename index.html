@@ -107,10 +107,12 @@
                 .range([height, 0]);
 
         var svg = d3.select("#hotpot_map").append("svg")
+                .attr("id","mapsvg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                .attr("id","hotpotdots");
 
         var tooltip = d3.select("#hotpot_map").append("div")
                 .attr("class", "map_tooltip")
@@ -155,8 +157,10 @@
         svg.selectAll(".dot")
                 .data(data)
                 .enter().append("circle")
-                .attr("class", "dot")
-                .attr("r", 2.0)
+                .attr("class", function (d) {
+                    return "dot"+d.group;
+                })
+                .attr("r", 3.0)
                 .attr("cx", function (d) {
                     return x(d.lat);
                 })
@@ -187,7 +191,10 @@
                     dispatch.compare.call(this, compare_list);
                 });
 
-        var legend = svg.selectAll(".legend")
+        var legend = d3.select("#mapsvg")
+                .append("g")
+                .attr("transform","translate(40,"+"0)")
+                .selectAll(".legend")
                 .data(color.domain())
                 .enter().append("g")
                 .attr("class", "legend")
@@ -200,6 +207,15 @@
                 .attr("width", 18)
                 .attr("height", 18)
                 .style("fill", color);
+
+        legend.on("mouseover", function (d) {
+                    d3.select("#hotpotdots").selectAll("*:not"+"("+"."+"dot"+d+")")
+                            .attr("opacity",0.1);
+        })
+                .on("mouseout", function (d) {
+                    d3.select("#hotpotdots").selectAll("*:not"+"("+"."+"dot"+d+")")
+                            .attr("opacity",1.0);
+                })
 
         legend.append("text")
                 .attr("x", width - 24)
